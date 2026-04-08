@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telomere–ILD Technical Interactive Map</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#121933;
+      --panel2:#0f1630;
+      --text:#e8ecf7;
+      --muted:#a9b3cf;
+      --line:#2a345f;
+      --accent:#6ea8fe;
+      --accent2:#79d3b3;
+      --accent3:#f6c56f;
+      --danger:#f28b82;
+      --chip:#1d2751;
+      --card:#10172e;
+      --shadow:0 10px 30px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:linear-gradient(180deg,#09101d,#0b1020 22%,#0b1020);color:var(--text);font:15px/1.5 Inter,Segoe UI,Arial,sans-serif}
+    a{color:#9ec2ff;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1440px;margin:0 auto;padding:24px}
+    header{display:grid;grid-template-columns:1.4fr .9fr;gap:16px;align-items:stretch}
+    .hero,.quick{background:linear-gradient(180deg,#121933,#0f152b);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+    .hero{padding:22px 22px 18px}
+    .quick{padding:18px}
+    h1{margin:0 0 8px;font-size:30px;line-height:1.15}
+    .sub{color:var(--muted);max-width:90ch}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .chip{background:var(--chip);border:1px solid #2d3b73;color:#dce4ff;border-radius:999px;padding:6px 10px;font-size:12px}
+    .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px}
+    .panel{background:linear-gradient(180deg,#121933,#0e1530);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+    .panel .hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .panel .bd{padding:16px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#0d1430;color:#cfd8f5;cursor:pointer;transition:.18s}
+    .tab.active{background:rgba(110,168,254,.14);border-color:#4d7ed8;color:#fff}
+    .diagram{min-height:660px;position:relative;overflow:hidden}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .legend span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+    .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+    .node{cursor:pointer;transition:transform .15s ease, filter .15s ease}
+    .node:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .node rect,.node path,.node circle,.node ellipse{transition:stroke .15s ease, fill .15s ease}
+    .node.active rect,.node.active path,.node.active circle,.node.active ellipse{stroke:#ffffff;stroke-width:2.2}
+    .side{display:grid;gap:16px}
+    .card{background:linear-gradient(180deg,#121933,#0f1630);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+    .card h2,.card h3{margin:0 0 8px}
+    .muted{color:var(--muted)}
+    .evidence{display:grid;gap:10px;margin-top:10px}
+    .evi{background:var(--card);border:1px solid #273158;border-radius:14px;padding:12px}
+    .evi .src{font-size:12px;color:#9eb0dd}
+    .evi .title{font-weight:600;margin-bottom:4px}
+    .metricgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+    .metric{background:var(--card);border:1px solid #273158;border-radius:14px;padding:12px}
+    .metric .n{font-size:22px;font-weight:700}
+    .small{font-size:12px;color:var(--muted)}
+    .workflow{display:grid;gap:10px;margin-top:10px}
+    .step{border:1px solid #273158;background:var(--card);padding:12px;border-radius:14px}
+    .step strong{display:block;margin-bottom:4px}
+    .foot{margin-top:18px;font-size:12px;color:var(--muted)}
+    .btns{display:flex;gap:8px;flex-wrap:wrap}
+    button.linkish{background:#111938;border:1px solid #30406f;color:#e7edff;border-radius:10px;padding:8px 12px;cursor:pointer}
+    button.linkish:hover{background:#162048}
+    pre.seq{white-space:pre-wrap;background:#0b1228;border:1px solid #263157;border-radius:14px;padding:12px;color:#d7e3ff;overflow:auto}
+    .badge{display:inline-block;border:1px solid #355087;border-radius:999px;padding:2px 8px;font-size:11px;color:#d9e5ff;background:#132044;margin-right:6px}
+    .hidden{display:none}
+    @media (max-width:1080px){
+      header,.grid{grid-template-columns:1fr}
+      .diagram{min-height:520px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <section class="hero">
+        <h1>Telomere–ILD Technical Interactive Map</h1>
+        <div class="sub">A focused technical view linking telomere architecture, core genes/proteins, assay modalities, and the operational pathway used in fibrotic interstitial lung disease. Click any molecular node, assay, or workflow step to view function, use, and supporting evidence.</div>
+        <div class="chips">
+          <span class="chip">TTAGGG repeats + 3′ overhang</span>
+          <span class="chip">Shelterin: TRF1 / TRF2 / RAP1 / TIN2 / TPP1 / POT1</span>
+          <span class="chip">Telomerase: TERT / TERC / dyskerin / NOP10 / NHP2</span>
+          <span class="chip">Pulmonary fibrosis focus</span>
+          <span class="chip">Clinical assay: flow-FISH</span>
+          <span class="chip">Research assays: TeSLA / long-read DTM</span>
+        </div>
+      </section>
+      <aside class="quick">
+        <h3 style="margin-top:0">What this is for</h3>
+        <div class="workflow">
+          <div class="step"><strong>Biomedical teams</strong>Screen fibrotic ILD/IPF patients, order a clinically validated telomere assay, and connect abnormal results to genetics, transplant planning, and medication review.</div>
+          <div class="step"><strong>Biotech teams</strong>Use flow-FISH for enrichment or stratification, then layer TeSLA or long-read telomere measurement as translational endpoints.</div>
+          <div class="step"><strong>Technical audience</strong>Inspect how genes and protein complexes map to assay choice and clinical pathway design.</div>
+        </div>
+      </aside>
+    </header>
+
+    <section class="grid">
+      <section class="panel">
+        <div class="hd">
+          <div class="tabs" id="tabs">
+            <button class="tab active" data-view="molecular">Molecular layer</button>
+            <button class="tab" data-view="assays">Assay layer</button>
+            <button class="tab" data-view="workflow">ILD deployment</button>
+          </div>
+          <div class="small">Interactive SVG + evidence panel</div>
+        </div>
+        <div class="bd diagram">
+          <svg id="svg" viewBox="0 0 1040 700" width="100%" height="100%" aria-label="Interactive telomere diagram">
+            <defs>
+              <linearGradient id="dnaGrad" x1="0" x2="1">
+                <stop offset="0%" stop-color="#1e3a8a"/>
+                <stop offset="100%" stop-color="#6ea8fe"/>
+              </linearGradient>
+              <linearGradient id="proteinGrad" x1="0" x2="1">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#79d3b3"/>
+              </linearGradient>
+              <linearGradient id="assayGrad" x1="0" x2="1">
+                <stop offset="0%" stop-color="#6b4e16"/>
+                <stop offset="100%" stop-color="#f6c56f"/>
+              </linearGradient>
+              <linearGradient id="workGrad" x1="0" x2="1">
+                <stop offset="0%" stop-color="#5c1e1e"/>
+                <stop offset="100%" stop-color="#f28b82"/>
+              </linearGradient>
+              <filter id="shadow"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.28"/></filter>
+            </defs>
+
+            <!-- Molecular view -->
+            <g data-group="molecular">
+              <text x="40" y="40" fill="#cfd8f5" font-size="24" font-weight="700">Chromosome end architecture</text>
+              <text x="40" y="66" fill="#9fb0d9" font-size="14">Click DNA or proteins to inspect molecular role and translational relevance.</text>
+
+              <!-- DNA track -->
+              <g class="node" data-key="telomere-dna" filter="url(#shadow)">
+                <rect x="42" y="100" rx="18" ry="18" width="650" height="92" fill="url(#dnaGrad)" stroke="#95bfff" opacity="0.95"></rect>
+                <text x="62" y="137" fill="white" font-size="17" font-weight="700">Telomeric DNA</text>
+                <text x="62" y="162" fill="#ebf3ff" font-size="15">(TTAGGG)n repeat array  →  chromosome-end protection</text>
+                <text x="62" y="182" fill="#dbe7ff" font-size="13">Non-coding repeats bound by shelterin; shortening eventually leads to uncapping and DNA-damage signaling.</text>
+              </g>
+
+              <g class="node" data-key="overhang" filter="url(#shadow)">
+                <rect x="708" y="114" rx="18" ry="18" width="240" height="64" fill="#1b2d63" stroke="#9fc0ff"></rect>
+                <text x="728" y="143" fill="white" font-size="16" font-weight="700">3′ G-rich overhang</text>
+                <text x="728" y="165" fill="#dce6ff" font-size="13">Protected by POT1 / TPP1</text>
+              </g>
+
+              <!-- shelterin arc -->
+              <path d="M105,280 C230,225 500,225 640,280" fill="none" stroke="#4168b6" stroke-width="3" stroke-dasharray="6 6"></path>
+              <text x="276" y="230" fill="#9fb0d9" font-size="14">Shelterin complex</text>
+
+              <g class="node" data-key="trf1" filter="url(#shadow)">
+                <ellipse cx="150" cy="300" rx="58" ry="30" fill="url(#proteinGrad)" stroke="#9df0d2"></ellipse>
+                <text x="126" y="306" fill="#08211d" font-size="18" font-weight="800">TRF1</text>
+              </g>
+              <g class="node" data-key="trf2" filter="url(#shadow)">
+                <ellipse cx="285" cy="284" rx="58" ry="30" fill="url(#proteinGrad)" stroke="#9df0d2"></ellipse>
+                <text x="261" y="290" fill="#08211d" font-size="18" font-weight="800">TRF2</text>
+              </g>
+              <g class="node" data-key="rap1" filter="url(#shadow)">
+                <ellipse cx="408" cy="300" rx="58" ry="30" fill="url(#proteinGrad)" stroke="#9df0d2"></ellipse>
+                <text x="384" y="306" fill="#08211d" font-size="18" font-weight="800">RAP1</text>
+              </g>
+              <g class="node" data-key="tin2" filter="url(#shadow)">
+                <ellipse cx="532" cy="284" rx="58" ry="30" fill="url(#proteinGrad)" stroke="#9df0d2"></ellipse>
+                <text x="509" y="290" fill="#08211d" font-size="18" font-weight="800">TIN2</text>
+              </g>
+              <g class="node" data-key="tpp1" filter="url(#shadow)">
+                <ellipse cx="668" cy="300" rx="58" ry="30" fill="url(#proteinGrad)" stroke="#9df0d2"></ellipse>
+                <text x="642" y="306" fill="#08211d" font-size="18" font-weight="800">TPP1</text>
+              </g>
+              <g class="node" data-key="pot1" filter="url(#shadow)">
+                <ellipse cx="810" cy="284" rx="58" ry="30" fill="url(#proteinGrad)" stroke="#9df0d2"></ellipse>
+                <text x="786" y="290" fill="#08211d" font-size="18" font-weight="800">POT1</text>
+              </g>
+
+              <!-- Telomerase -->
+              <text x="40" y="410" fill="#cfd8f5" font-size="24" font-weight="700">Telomerase assembly</text>
+              <text x="40" y="434" fill="#9fb0d9" font-size="14">Core components and accessory factors used in maintenance and disease classification.</text>
+
+              <g class="node" data-key="tert" filter="url(#shadow)">
+                <rect x="54" y="468" rx="18" ry="18" width="140" height="62" fill="#3b206f" stroke="#c9a8ff"></rect>
+                <text x="103" y="503" fill="#f2eaff" font-size="19" font-weight="800">TERT</text>
+              </g>
+              <g class="node" data-key="terc" filter="url(#shadow)">
+                <rect x="212" y="468" rx="18" ry="18" width="140" height="62" fill="#3b206f" stroke="#c9a8ff"></rect>
+                <text x="261" y="503" fill="#f2eaff" font-size="19" font-weight="800">TERC</text>
+              </g>
+              <g class="node" data-key="dyskerin" filter="url(#shadow)">
+                <rect x="370" y="468" rx="18" ry="18" width="156" height="62" fill="#3b206f" stroke="#c9a8ff"></rect>
+                <text x="415" y="503" fill="#f2eaff" font-size="18" font-weight="800">Dyskerin</text>
+              </g>
+              <g class="node" data-key="nop10" filter="url(#shadow)">
+                <rect x="544" y="468" rx="18" ry="18" width="126" height="62" fill="#3b206f" stroke="#c9a8ff"></rect>
+                <text x="582" y="503" fill="#f2eaff" font-size="18" font-weight="800">NOP10</text>
+              </g>
+              <g class="node" data-key="nhp2" filter="url(#shadow)">
+                <rect x="688" y="468" rx="18" ry="18" width="126" height="62" fill="#3b206f" stroke="#c9a8ff"></rect>
+                <text x="730" y="503" fill="#f2eaff" font-size="18" font-weight="800">NHP2</text>
+              </g>
+              <g class="node" data-key="parn" filter="url(#shadow)">
+                <rect x="832" y="468" rx="18" ry="18" width="126" height="62" fill="#3b206f" stroke="#c9a8ff"></rect>
+                <text x="873" y="503" fill="#f2eaff" font-size="18" font-weight="800">PARN</text>
+              </g>
+
+              <g class="node" data-key="gene-panel" filter="url(#shadow)">
+                <rect x="570" y="568" rx="18" ry="18" width="388" height="72" fill="#162146" stroke="#90adff"></rect>
+                <text x="590" y="596" fill="white" font-size="17" font-weight="700">Pulmonary fibrosis–relevant telomere genes</text>
+                <text x="590" y="620" fill="#dbe7ff" font-size="14">TERT, TERC, RTEL1, PARN, DKC1, TINF2 and related telomere-regulation genes</text>
+              </g>
+
+              <g class="node" data-key="r tel1" visibility="hidden"></g>
+            </g>
+
+            <!-- Assays view -->
+            <g data-group="assays" visibility="hidden">
+              <text x="40" y="40" fill="#cfd8f5" font-size="24" font-weight="700">Assay stack</text>
+              <text x="40" y="66" fill="#9fb0d9" font-size="14">Clinical assay for decisions, plus research assays for distribution and mechanistic resolution.</text>
+
+              <g class="node" data-key="flow-fish" filter="url(#shadow)">
+                <rect x="42" y="116" rx="20" ry="20" width="290" height="120" fill="url(#assayGrad)" stroke="#ffd98f"></rect>
+                <text x="64" y="154" fill="#2d2004" font-size="24" font-weight="800">flow-FISH</text>
+                <text x="64" y="182" fill="#382808" font-size="15">Validated clinical test</text>
+                <text x="64" y="204" fill="#4a350f" font-size="13">Age-adjusted telomere length in blood leukocyte populations</text>
+              </g>
+
+              <g class="node" data-key="tesla" filter="url(#shadow)">
+                <rect x="374" y="116" rx="20" ry="20" width="290" height="120" fill="url(#assayGrad)" stroke="#ffd98f"></rect>
+                <text x="396" y="154" fill="#2d2004" font-size="24" font-weight="800">TeSLA</text>
+                <text x="396" y="182" fill="#382808" font-size="15">Shortest-telomere enriched PCR assay</text>
+                <text x="396" y="204" fill="#4a350f" font-size="13">Useful for translational studies and biologic endpoints</text>
+              </g>
+
+              <g class="node" data-key="dtm" filter="url(#shadow)">
+                <rect x="706" y="116" rx="20" ry="20" width="290" height="120" fill="url(#assayGrad)" stroke="#ffd98f"></rect>
+                <text x="728" y="154" fill="#2d2004" font-size="24" font-weight="800">Long-read DTM / Telo-seq</text>
+                <text x="728" y="182" fill="#382808" font-size="15">Sequencing-based telomere distributions</text>
+                <text x="728" y="204" fill="#4a350f" font-size="13">Higher-resolution distribution and chromosome-arm signal</text>
+              </g>
+
+              <path d="M188 236 L188 315" stroke="#6d80b8" stroke-width="3" stroke-dasharray="6 6"></path>
+              <path d="M520 236 L520 315" stroke="#6d80b8" stroke-width="3" stroke-dasharray="6 6"></path>
+              <path d="M852 236 L852 315" stroke="#6d80b8" stroke-width="3" stroke-dasharray="6 6"></path>
+
+              <g class="node" data-key="blood-input" filter="url(#shadow)">
+                <rect x="60" y="318" rx="18" ry="18" width="256" height="86" fill="#132044" stroke="#8eb0ff"></rect>
+                <text x="82" y="352" fill="white" font-size="18" font-weight="700">Peripheral blood input</text>
+                <text x="82" y="376" fill="#dce7ff" font-size="14">Used directly in flow-FISH and sequencing workflows</text>
+              </g>
+              <g class="node" data-key="distribution" filter="url(#shadow)">
+                <rect x="392" y="318" rx="18" ry="18" width="256" height="86" fill="#132044" stroke="#8eb0ff"></rect>
+                <text x="414" y="352" fill="white" font-size="18" font-weight="700">Distribution readout</text>
+                <text x="414" y="376" fill="#dce7ff" font-size="14">Mean only vs shortest-tail vs full distribution</text>
+              </g>
+              <g class="node" data-key="trial-endpoint" filter="url(#shadow)">
+                <rect x="724" y="318" rx="18" ry="18" width="256" height="86" fill="#132044" stroke="#8eb0ff"></rect>
+                <text x="746" y="352" fill="white" font-size="18" font-weight="700">Trial endpoint layer</text>
+                <text x="746" y="376" fill="#dce7ff" font-size="14">Enrollment / stratification / translational biomarker</text>
+              </g>
+
+              <g class="node" data-key="sequencing-pipeline" filter="url(#shadow)">
+                <rect x="170" y="470" rx="20" ry="20" width="690" height="128" fill="#0f1732" stroke="#6ea8fe"></rect>
+                <text x="194" y="506" fill="white" font-size="19" font-weight="700">Technical sequencing view</text>
+                <text x="194" y="534" fill="#dbe7ff" font-size="14">Capture telomeric ends or use whole-genome long reads → sequence intact telomeres → quantify per-read length distribution → compare mean / quartiles / short fractions.</text>
+                <text x="194" y="562" fill="#b7c7ef" font-size="13">Nature Communications 2024 reported up to ~30 bp resolution and correlation with flow-FISH in RTEL1-mutant individuals.</text>
+              </g>
+            </g>
+
+            <!-- Workflow view -->
+            <g data-group="workflow" visibility="hidden">
+              <text x="40" y="40" fill="#cfd8f5" font-size="24" font-weight="700">Focused deployment in fibrotic ILD / IPF</text>
+              <text x="40" y="66" fill="#9fb0d9" font-size="14">A practical pathway for specialty ILD clinics, transplant programs, and translational trial teams.</text>
+
+              <g class="node" data-key="screening" filter="url(#shadow)">
+                <rect x="42" y="126" rx="20" ry="20" width="220" height="110" fill="url(#workGrad)" stroke="#ffc0bb"></rect>
+                <text x="66" y="165" fill="#35100d" font-size="22" font-weight="800">1. Phenotype screen</text>
+                <text x="66" y="193" fill="#4e1a16" font-size="14">Early greying, family history of ILD,</text>
+                <text x="66" y="212" fill="#4e1a16" font-size="14">unexplained liver disease, cytopenias</text>
+              </g>
+
+              <g class="node" data-key="clinical-test" filter="url(#shadow)">
+                <rect x="300" y="126" rx="20" ry="20" width="220" height="110" fill="url(#workGrad)" stroke="#ffc0bb"></rect>
+                <text x="324" y="165" fill="#35100d" font-size="22" font-weight="800">2. flow-FISH</text>
+                <text x="324" y="193" fill="#4e1a16" font-size="14">Use age-adjusted laboratory reporting</text>
+                <text x="324" y="212" fill="#4e1a16" font-size="14">for patient-level decisions</text>
+              </g>
+
+              <g class="node" data-key="genetics" filter="url(#shadow)">
+                <rect x="558" y="126" rx="20" ry="20" width="220" height="110" fill="url(#workGrad)" stroke="#ffc0bb"></rect>
+                <text x="582" y="165" fill="#35100d" font-size="22" font-weight="800">3. Gene panel</text>
+                <text x="582" y="193" fill="#4e1a16" font-size="14">Evaluate telomere-related genes</text>
+                <text x="582" y="212" fill="#4e1a16" font-size="14">and route to counseling</text>
+              </g>
+
+              <g class="node" data-key="management" filter="url(#shadow)">
+                <rect x="816" y="126" rx="20" ry="20" width="180" height="110" fill="url(#workGrad)" stroke="#ffc0bb"></rect>
+                <text x="839" y="165" fill="#35100d" font-size="22" font-weight="800">4. Action</text>
+                <text x="839" y="193" fill="#4e1a16" font-size="14">Immunosuppression, transplant,</text>
+                <text x="839" y="212" fill="#4e1a16" font-size="14">hematology / liver review</text>
+              </g>
+
+              <path d="M262 181 L300 181" stroke="#ffb5ae" stroke-width="4" marker-end="url(#arrowW)"/>
+              <path d="M520 181 L558 181" stroke="#ffb5ae" stroke-width="4" marker-end="url(#arrowW)"/>
+              <path d="M778 181 L816 181" stroke="#ffb5ae" stroke-width="4" marker-end="url(#arrowW)"/>
+              <defs>
+                <marker id="arrowW" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb5ae" />
+                </marker>
+              </defs>
+
+              <g class="node" data-key="transplant" filter="url(#shadow)">
+                <rect x="52" y="330" rx="20" ry="20" width="450" height="126" fill="#10172e" stroke="#7ea7ff"></rect>
+                <text x="76" y="366" fill="white" font-size="21" font-weight="700">Transplant program use</text>
+                <text x="76" y="394" fill="#dbe6ff" font-size="15">2026 ISHLT consensus: all ILD patients referred for transplant should undergo clinical screening for possible short telomere syndrome.</text>
+                <text x="76" y="420" fill="#baccf3" font-size="13">Use telomere-informed review for pre-transplant complexity, cytopenias, liver disease, and post-transplant risk planning.</text>
+              </g>
+
+              <g class="node" data-key="biotech" filter="url(#shadow)">
+                <rect x="538" y="330" rx="20" ry="20" width="458" height="126" fill="#10172e" stroke="#7ea7ff"></rect>
+                <text x="562" y="366" fill="white" font-size="21" font-weight="700">Biotech deployment</text>
+                <text x="562" y="394" fill="#dbe6ff" font-size="15">Use flow-FISH for enrollment or stratification; add TeSLA or long-read telomere assays as secondary or exploratory endpoints.</text>
+                <text x="562" y="420" fill="#baccf3" font-size="13">TELO-SCOPE provides precedent for a pulmonary-fibrosis trial using a telomere endpoint program.</text>
+              </g>
+
+              <g class="node" data-key="impact" filter="url(#shadow)">
+                <rect x="224" y="520" rx="20" ry="20" width="590" height="110" fill="#15234c" stroke="#96b7ff"></rect>
+                <text x="248" y="556" fill="white" font-size="21" font-weight="700">Observed practical impact</text>
+                <text x="248" y="584" fill="#dbe7ff" font-size="15">A 2024 Chest study reported management changes in 35 ILD patients (32% of the cohort), most commonly reducing or avoiding immunosuppression.</text>
+              </g>
+            </g>
+          </svg>
+          <div class="legend">
+            <span><i class="dot" style="background:#6ea8fe"></i> DNA / structure</span>
+            <span><i class="dot" style="background:#79d3b3"></i> Protein complex</span>
+            <span><i class="dot" style="background:#f6c56f"></i> Assay / measurement</span>
+            <span><i class="dot" style="background:#f28b82"></i> Clinical workflow</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="card">
+          <h2 id="detail-title">Telomere DNA</h2>
+          <div id="detail-tags" class="small"></div>
+          <p id="detail-body" class="muted">Select a node to inspect its role, technical interpretation, and where it enters the ILD workflow.</p>
+          <pre id="detail-seq" class="seq hidden"></pre>
+          <div class="metricgrid" id="metrics"></div>
+        </section>
+
+        <section class="card">
+          <h3>Evidence</h3>
+          <div id="evidence" class="evidence"></div>
+        </section>
+
+        <section class="card">
+          <h3>Sharing and hosting</h3>
+          <p class="muted">This page is a standalone HTML file. It can be deployed as-is to Netlify, Vercel, GitHub Pages, or any static web host.</p>
+          <div class="btns">
+            <button class="linkish" id="copyPath">Copy suggested file name</button>
+            <button class="linkish" id="copyDeploy">Copy 3-step deploy note</button>
+          </div>
+          <div class="foot">This environment cannot publish a public website directly, so no public hosted URL is generated here.</div>
+        </section>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const DATA = {
+      'telomere-dna': {
+        title: 'Telomeric DNA repeat array',
+        tags: ['Structure','Molecular layer'],
+        body: 'Human telomeres are chromosome-end nucleoprotein structures containing TTAGGG repeats. They prevent chromosome ends from being recognized as double-strand breaks. In non-malignant cells lacking sufficient telomerase, telomeres shorten with cell division until a subset becomes dysfunctional, which can trigger senescence, apoptosis, or other damage responses.',
+        seq: '5′-TTAGGGTTAGGGTTAGGGTTAGGGTTAGGG-3′\n3′-AATCCCAATCCCAATCCCAATCCCAATCCC-5′',
+        metrics: [
+          ['DNA motif','TTAGGG repeats'],
+          ['Protected by','Shelterin']
+        ],
+        evidence: [
+          {title:'Nature Communications 2024', src:'Digital telomere measurement by long-read sequencing', text:'The paper states that telomeres are nucleoprotein structures that prevent chromosome ends from being recognized as double-strand breaks, and that telomeric TTAGGG repeats are recognized by shelterin.', href:'https://www.nature.com/articles/s41467-024-49007-4'}
+        ]
+      },
+      'overhang': {
+        title: '3′ G-rich overhang',
+        tags: ['Structure','Shelterin interface'],
+        body: 'The G-rich single-stranded overhang is part of the functional chromosome-end architecture. POT1 and TPP1 are the key shelterin subunits associated with this region and are involved in end protection and telomerase recruitment control.',
+        metrics: [['Primary binders','POT1 / TPP1'],['Practical relevance','Maps to shelterin defects and maintenance failure']],
+        evidence:[
+          {title:'Adult telomere biology disorders review', src:'Haematologica 2026', text:'The review describes shelterin as containing RAP1, TRF1, TRF2, TIN2, TPP1, and POT1, with the complex protecting telomeres and coordinating telomerase access.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'trf1': {
+        title: 'TRF1',
+        tags: ['Shelterin','Double-stranded telomeric DNA binder'],
+        body: 'TRF1 is one of the shelterin subunits that bind double-stranded telomeric repeats. In a technical diagram, it is best understood as part of the core protective complex that helps organize and stabilize telomere architecture.',
+        metrics: [['Complex','Shelterin'],['Binding mode','Double-stranded telomeric DNA']],
+        evidence:[
+          {title:'Shelterin composition', src:'Haematologica 2026 / de Lange review', text:'The adult TBD review and classical shelterin literature identify TRF1 as one of the six shelterin subunits, along with TRF2, RAP1, TIN2, TPP1, and POT1.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'trf2': {
+        title: 'TRF2',
+        tags: ['Shelterin','Double-stranded telomeric DNA binder'],
+        body: 'TRF2 is a shelterin subunit bound to double-stranded telomeric DNA. Together with the other shelterin proteins, it contributes to capping and end protection at chromosome termini.',
+        metrics: [['Complex','Shelterin'],['Use in diagram','Core end-protection protein']],
+        evidence:[
+          {title:'Shelterin composition', src:'Haematologica 2026', text:'The review lists TRF2 as one of the six shelterin proteins responsible for telomere protection and regulation of telomerase recruitment.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'rap1': {
+        title: 'RAP1',
+        tags: ['Shelterin','Accessory subunit'],
+        body: 'RAP1 is part of shelterin and is included in the architectural map because the clinical genetics literature treats shelterin as a coordinated protective system, not as isolated proteins.',
+        metrics: [['Complex','Shelterin'],['Interpretation','Part of coordinated chromosome-end protection']],
+        evidence:[
+          {title:'Shelterin composition', src:'Haematologica 2026', text:'RAP1 is included among the six shelterin proteins in the adult TBD review.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'tin2': {
+        title: 'TIN2 / TINF2',
+        tags: ['Shelterin','Disease gene'],
+        body: 'TIN2 is a core shelterin component encoded by TINF2. It is useful in technical pathway diagrams because it links the protein-level protection complex to a clinically relevant gene implicated in telomere biology disorders.',
+        metrics: [['Protein','TIN2'],['Gene','TINF2']],
+        evidence:[
+          {title:'Long-read sequencing study', src:'Nature Communications 2024', text:'The DTM study analyzed telomere shortening in TIN2-mutant human stem cells and found shorter telomeres in mutant cells compared with wild-type controls.', href:'https://www.nature.com/articles/s41467-024-49007-4'},
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review identifies TINF2 within clinically relevant telomere-related genes and places TIN2 inside shelterin.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'tpp1': {
+        title: 'TPP1 / ACD',
+        tags: ['Shelterin','Telomerase interface'],
+        body: 'TPP1 is a shelterin component that is useful to show as a telomerase-interface protein. In translational diagrams, it visually connects chromosome-end protection with telomerase access and maintenance.',
+        metrics: [['Complex','Shelterin'],['Role in figure','Interface between end protection and telomerase recruitment']],
+        evidence:[
+          {title:'Telomerase assembly figure', src:'Haematologica 2026', text:'The review’s telomerase assembly figure shows telomerase interfacing with shelterin and places TPP1 among the shelterin subunits.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'pot1': {
+        title: 'POT1',
+        tags: ['Shelterin','Single-stranded overhang binder'],
+        body: 'POT1 is the shelterin subunit typically associated with the single-stranded telomeric overhang. It is relevant in a technical view because it anchors the overhang-protection part of the chromosome-end structure.',
+        metrics: [['Complex','Shelterin'],['Region','Single-stranded overhang']],
+        evidence:[
+          {title:'Shelterin and telomere protection', src:'Nature Communications 2024 / Haematologica 2026', text:'Both sources place POT1 within shelterin and describe shelterin as the protective complex controlling telomerase recruitment and telomere capping.', href:'https://www.nature.com/articles/s41467-024-49007-4'}
+        ]
+      },
+      'tert': {
+        title: 'TERT',
+        tags: ['Telomerase','Catalytic subunit','Pulmonary fibrosis gene'],
+        body: 'TERT encodes the catalytic reverse transcriptase subunit of telomerase. It appears repeatedly in telomere-biology-disorder literature and pulmonary fibrosis genetics, so it is one of the most useful molecular nodes to surface in a biotech-facing diagram.',
+        metrics: [['Complex','Telomerase'],['Relevance','Common pulmonary-fibrosis telomere gene']],
+        evidence:[
+          {title:'Telomerase assembly', src:'Haematologica 2026', text:'The review states that the active telomerase complex includes TERT, TERC, and dyskerin, with other accessory factors supporting assembly and function.', href:'https://haematologica.org/article/view/12905'},
+          {title:'Genetic aspects of TBD', src:'2026 review snippet', text:'Recent genetics review summaries report that TERT, TERC, RTEL1, and PARN account for many identified telomere biology disorder cases.', href:'https://www.sciencedirect.com/science/article/abs/pii/S0037196326000247'}
+        ]
+      },
+      'terc': {
+        title: 'TERC',
+        tags: ['Telomerase','RNA template'],
+        body: 'TERC is the telomerase RNA component and provides the template used by telomerase. In a technical pathway, it is best displayed adjacent to TERT because clinical genetics and mechanistic interpretation often treat them together.',
+        metrics: [['Complex','Telomerase'],['Type','RNA template component']],
+        evidence:[
+          {title:'Telomerase assembly', src:'Haematologica 2026', text:'The review lists TERT and TERC as core telomerase components within the active enzyme complex.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'dyskerin': {
+        title: 'Dyskerin / DKC1 axis',
+        tags: ['Telomerase biogenesis','Disease-associated'],
+        body: 'Dyskerin is part of the telomerase assembly apparatus and is clinically relevant because DKC1-associated disease can include pulmonary fibrosis and other telomere-related syndromic features.',
+        metrics: [['Complex','Telomerase biogenesis'],['Gene axis','DKC1']],
+        evidence:[
+          {title:'Telomerase assembly', src:'Haematologica 2026', text:'The review includes dyskerin as a core telomerase subunit and notes its role in assembly.', href:'https://haematologica.org/article/view/12905'},
+          {title:'ERS paper on DKC1 and pulmonary fibrosis', src:'ERJ 2026', text:'An ERS publication reports adult male DKC1 mutation carriers with early-onset pulmonary fibrosis and extrapulmonary findings, placing DKC1 in the pulmonary-fibrosis telomere spectrum.', href:'https://publications.ersnet.org/content/erjor/12/1/00417-2025'}
+        ]
+      },
+      'nop10': {
+        title: 'NOP10',
+        tags: ['Telomerase assembly'],
+        body: 'NOP10 is shown here because the adult TBD review identifies it as one of the proteins involved in telomerase assembly. It is not usually a first-line clinical focus in ILD programs, but it helps technical audiences see that telomerase maintenance involves a broader ribonucleoprotein system.',
+        metrics: [['Complex','Telomerase assembly'],['Use','Mechanistic completeness']],
+        evidence:[
+          {title:'Telomerase assembly', src:'Haematologica 2026', text:'NOP10 is listed among proteins involved in telomerase assembly in the review’s telomerase figure and explanation.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'nhp2': {
+        title: 'NHP2',
+        tags: ['Telomerase assembly'],
+        body: 'NHP2 is included for the same reason as NOP10: it is part of the assembly apparatus described in the adult TBD review and rounds out the technical map of telomerase biogenesis.',
+        metrics: [['Complex','Telomerase assembly'],['Use','Mechanistic completeness']],
+        evidence:[
+          {title:'Telomerase assembly', src:'Haematologica 2026', text:'NHP2 is named as a telomerase assembly protein in the adult telomere biology disorders review.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'parn': {
+        title: 'PARN',
+        tags: ['Telomerase regulation','Pulmonary fibrosis gene'],
+        body: 'PARN is clinically relevant in pulmonary fibrosis and telomere biology disorder genetics. In sequencing-based studies, PARN deficiency has also been used as a defined telomere-maintenance defect to validate distribution-sensitive telomere assays.',
+        metrics: [['Relevance','Pulmonary fibrosis / TBD gene'],['Shown in DTM study','Yes']],
+        evidence:[
+          {title:'Nature Communications 2024', src:'Long-read DTM', text:'The study used PARN knockout human stem cells to demonstrate telomere shortening detected by digital telomere measurement.', href:'https://www.nature.com/articles/s41467-024-49007-4'},
+          {title:'Genetics review summary', src:'2026 TBD genetics review', text:'Recent review summaries identify PARN among the major telomere-related genes encountered in telomere biology disorders.', href:'https://www.sciencedirect.com/science/article/abs/pii/S0037196326000247'}
+        ]
+      },
+      'gene-panel': {
+        title: 'Telomere-gene testing panel',
+        tags: ['Clinical genetics','Routing step'],
+        body: 'For fibrotic ILD programs, a telomere-gene panel is typically used after an abnormal telomere result or a strongly suggestive phenotype. The most clinically recurrent genes include TERT, TERC, RTEL1, PARN, DKC1, and TINF2, among others.',
+        metrics: [['Common genes','TERT / TERC / RTEL1 / PARN / DKC1 / TINF2'],['Position in workflow','After screening and telomere testing']],
+        evidence:[
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review discusses follow-on genetic evaluation after telomere-length testing and details multiple telomere-related genes involved in disease.', href:'https://haematologica.org/article/view/12905'},
+          {title:'Genetics review summary', src:'2026 TBD genetics review', text:'Recent genetics review summaries report that TERT, TERC, RTEL1, and PARN account for many identified TBD cases.', href:'https://www.sciencedirect.com/science/article/abs/pii/S0037196326000247'}
+        ]
+      },
+      'flow-fish': {
+        title: 'flow-FISH',
+        tags: ['Clinical assay','Validated use'],
+        body: 'Flow cytometry with fluorescent in situ hybridization is the current clinically validated telomere-length test. It measures age-adjusted average telomere length in sorted leukocyte populations and is the most appropriate assay for front-line patient-level decisions in this focused ILD pathway.',
+        metrics: [['Validation status','Clinical use'],['Output','Average telomere length in blood-cell populations']],
+        evidence:[
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review states that flow-FISH is the only telomere-length test validated for clinical use. It also notes that some laboratories report more granular immune-cell panels.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'tesla': {
+        title: 'TeSLA',
+        tags: ['Research assay','Shortest-telomere enrichment'],
+        body: 'TeSLA is useful when the aim is to interrogate the lower end of the telomere distribution rather than only the mean. In this program, it is best positioned as a translational or trial biomarker rather than the first-line clinical assay.',
+        metrics: [['Best use','Secondary / exploratory endpoint'],['Signal emphasis','Shortest telomeres']],
+        evidence:[
+          {title:'Nature Communications 2024', src:'Assay comparison discussion', text:'The long-read telomere paper describes STELA and TeSLA as PCR-based assays that preferentially amplify shorter telomeres rather than reporting the full telomere distribution.', href:'https://www.nature.com/articles/s41467-024-49007-4'},
+          {title:'TELO-SCOPE trial', src:'ClinicalTrials.gov / BMJ Open Respiratory Research', text:'The TELO-SCOPE pulmonary fibrosis trial uses telomere-focused biomarker endpoints, providing a precedent for translational telomere measurement in fibrotic lung disease.', href:'https://clinicaltrials.gov/study/NCT04638517'}
+        ]
+      },
+      'dtm': {
+        title: 'Long-read digital telomere measurement / Telo-seq',
+        tags: ['Sequencing','Distribution-sensitive'],
+        body: 'Long-read telomere sequencing methods provide a more resolved picture of telomere distributions than mean-based assays. For technical and translational teams, the value is in full-distribution readouts, chromosome-arm information, and direct comparison of short fractions rather than a single average.',
+        seq: 'Sample processing\n1) enrich telomeric ends or use WGS long reads\n2) sequence intact telomere-containing molecules\n3) call per-read telomere lengths\n4) summarize mean / median / quartiles / short-fraction bins',
+        metrics: [['Resolution','Up to ~30 bp reported in DTM study'],['Clinical role today','Investigational / translational']],
+        evidence:[
+          {title:'Nature Communications 2024', src:'Long-read DTM', text:'The paper reports digital telomere measurement with up to 30 bp resolution, correlation with flow-FISH in RTEL1-mutant individuals, and the ability to distinguish healthy aging from telomere-biology-disorder samples using distributional information.', href:'https://www.nature.com/articles/s41467-024-49007-4'},
+          {title:'High-resolution long-read telomere sequencing', src:'Nature Communications 2024', text:'Telo-seq was reported to resolve chromosome-arm and allele-specific telomere heterogeneity and to discriminate telomerase- from ALT-positive cancer cell lines.', href:'https://www.nature.com/articles/s41467-024-48917-7'}
+        ]
+      },
+      'blood-input': {
+        title: 'Peripheral blood as the operational sample',
+        tags: ['Sample type','Clinical deployment'],
+        body: 'The focused ILD pathway uses blood because flow-FISH is a peripheral-blood clinical assay and current clinical workflows are designed around blood-based telomere assessment.',
+        metrics: [['Primary sample','Peripheral blood leukocytes'],['Why it matters','Operational fit for specialty clinics and trials']],
+        evidence:[
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review states that flow-FISH is performed on peripheral blood leukocytes after cell sorting.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'distribution': {
+        title: 'Distribution readout',
+        tags: ['Interpretation','Why different assays disagree'],
+        body: 'This layer shows why assay selection matters. Flow-FISH gives an average. TeSLA enriches for the shortest telomeres. Long-read methods can describe the full distribution, including mean, median, quartiles, and fractions of very short telomeres.',
+        metrics: [['flow-FISH','Mean'],['TeSLA','Shortest-tail enriched'],['Long-read','Full distribution']],
+        evidence:[
+          {title:'Nature Communications 2024', src:'Assay comparison', text:'The long-read DTM paper explicitly contrasts flow-FISH, qPCR, TRF, STELA, and TeSLA, and argues that the structure of the telomere-length distribution contains information about the underlying maintenance mechanism.', href:'https://www.nature.com/articles/s41467-024-49007-4'}
+        ]
+      },
+      'trial-endpoint': {
+        title: 'Trial endpoint layer',
+        tags: ['Biotech use','Translational biomarker'],
+        body: 'For clinical development, telomere assays can be used in three different roles: enrichment, stratification, and pharmacodynamic or exploratory endpoints. The strongest current deployment is to keep validated assays on the enrollment side and use more technical assays to expand translational interpretation.',
+        metrics: [['Enrollment','flow-FISH'],['Exploratory endpoint','TeSLA or long-read']],
+        evidence:[
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review distinguishes clinically validated testing from emerging research methods.', href:'https://haematologica.org/article/view/12905'},
+          {title:'TELO-SCOPE trial', src:'ClinicalTrials.gov', text:'The TELO-SCOPE pulmonary fibrosis program provides a real-world precedent for a telomere-centered biomarker and treatment framework.', href:'https://clinicaltrials.gov/study/NCT04638517'}
+        ]
+      },
+      'sequencing-pipeline': {
+        title: 'Sequencing-centered technical view',
+        tags: ['Long-read sequencing','Bioinformatics'],
+        body: 'This step is included for the technical audience asking for a more sequence-oriented diagram. The key idea is that long-read approaches convert telomere biology into per-read measurements that can then be summarized as full distributions and linked to defined maintenance defects.',
+        metrics: [['Input','Telomere capture or long-read WGS'],['Output','Per-read telomere lengths + distribution summary']],
+        evidence:[
+          {title:'Nature Communications 2024', src:'Long-read DTM', text:'The study describes telomere capture or whole-genome long-read sequencing, then direct measurement of telomere length distributions and machine-learning classification of healthy versus TBD samples.', href:'https://www.nature.com/articles/s41467-024-49007-4'}
+        ]
+      },
+      'screening': {
+        title: 'Phenotype screening in ILD / transplant programs',
+        tags: ['Clinical workflow','Entry criteria'],
+        body: 'A practical screen uses clinical features such as early greying, family history of ILD, unexplained liver disease, and cytopenias or macrocytosis before ordering telomere testing. This step helps concentrate testing in the population where yield is materially higher.',
+        metrics: [['Screen features','Early greying / family history / liver disease / cytopenias'],['Program fit','ILD clinics and transplant evaluation']],
+        evidence:[
+          {title:'ERJ Open Research 2025/2026 publication', src:'Screening protocol study', text:'The study of adults with ILD undergoing lung-transplant evaluation used a phenotype screen based on early greying, family history of ILD and unexplained liver disease, cytopenias, or macrocytosis before telomere testing.', href:'https://publications.ersnet.org/index.php/content/erjor/11/5/00875-2024'}
+        ]
+      },
+      'clinical-test': {
+        title: 'Use flow-FISH for patient-level decisions',
+        tags: ['Clinical workflow','Assay choice'],
+        body: 'Once the phenotype screen is positive or the clinical context warrants testing, the front-line assay should be flow-FISH rather than a research-only platform. This keeps decisions tied to the assay with current clinical validation.',
+        metrics: [['Decision assay','flow-FISH'],['Interpretation mode','Age-adjusted percentile / laboratory reference']],
+        evidence:[
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review states that flow-FISH is the only test validated for clinical use and explains that it reports average telomere length in defined leukocyte populations.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'genetics': {
+        title: 'Follow-on genetics',
+        tags: ['Clinical workflow','Genotype confirmation'],
+        body: 'Abnormal telomere results or a strong phenotype should lead to telomere-related genetic testing and counseling. This is where the molecular part of the diagram becomes actionable for clinic and trial teams.',
+        metrics: [['Common targets','TERT / TERC / RTEL1 / PARN / DKC1 / TINF2'],['Reason','Clarify etiology and family risk']],
+        evidence:[
+          {title:'Chest 2024 clinical impact study', src:'ILD telomere testing management', text:'In the published ILD cohort, telomere testing plus genetic follow-up identified positive or candidate diagnostic telomere-related findings in a substantial fraction of those tested genetically.', href:'https://pubmed.ncbi.nlm.nih.gov/38950694/'},
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review describes genetic evaluation as part of the diagnostic process after telomere-length testing.', href:'https://haematologica.org/article/view/12905'}
+        ]
+      },
+      'management': {
+        title: 'Action layer',
+        tags: ['Clinical workflow','Management change'],
+        body: 'The practical value of telomere testing in this focused setting is that it can alter management. Common uses include reviewing immunosuppression exposure, planning transplant timing, and checking for marrow and liver comorbidity relevant to pulmonary-fibrosis care.',
+        metrics: [['Main actions','Immunosuppression / transplant / hematology / liver review'],['Program outcome','Documentable management change']],
+        evidence:[
+          {title:'Chest 2024 clinical impact study', src:'ILD telomere testing management', text:'Management changed in 35 patients, representing 32% of the cohort, most commonly through reduction or avoidance of immunosuppression.', href:'https://pubmed.ncbi.nlm.nih.gov/38950694/'},
+          {title:'ISHLT 2026 consensus', src:'Short telomere syndrome and lung transplantation', text:'The consensus highlights that short telomere syndrome introduces transplant-specific evaluation and management complexity.', href:'https://www.jhltonline.org/article/S1053-2498(25)02365-4/fulltext'}
+        ]
+      },
+      'transplant': {
+        title: 'Transplant-program use',
+        tags: ['Transplant','Consensus-backed use'],
+        body: 'This is one of the clearest practical settings for telomere deployment. Current consensus guidance states that patients with ILD referred for transplant should undergo screening for possible short telomere syndrome, because telomere-related disease can affect candidacy assessment and post-transplant planning.',
+        metrics: [['Guidance source','ISHLT 2026'],['Population','ILD patients referred for transplant']],
+        evidence:[
+          {title:'ISHLT Consensus Statement 2026', src:'JHLT / ISHLT', text:'The consensus states that all patients with an interstitial lung disease referred for transplant should undergo clinical screening for the possibility of a short telomere syndrome.', href:'https://www.jhltonline.org/article/S1053-2498(25)02365-4/fulltext'}
+        ]
+      },
+      'biotech': {
+        title: 'Biotech development use',
+        tags: ['Clinical development','Stratification'],
+        body: 'For biotech teams, the most conservative and useful model is to use flow-FISH for enrollment or stratification, then pair it with more detailed telomere assays as secondary or exploratory biomarker layers. This lets the protocol stay anchored to a validated assay while still collecting richer biology.',
+        metrics: [['Enrollment','Validated assay first'],['Secondary biomarker','TeSLA or long-read sequencing']],
+        evidence:[
+          {title:'Adult TBD review', src:'Haematologica 2026', text:'The review distinguishes validated clinical testing from newer research assays, which supports a tiered development strategy.', href:'https://haematologica.org/article/view/12905'},
+          {title:'TELO-SCOPE', src:'ClinicalTrials.gov / BMJ Open Respiratory Research', text:'TELO-SCOPE is a pulmonary-fibrosis trial centered on short telomere biology, providing a concrete development precedent in this disease area.', href:'https://clinicaltrials.gov/study/NCT04638517'}
+        ]
+      },
+      'impact': {
+        title: 'Observed operational impact',
+        tags: ['Real-world ILD management','Utility'],
+        body: 'The strongest reason to implement telomere testing in this focused setting is that it has already been shown to affect care decisions in specialty ILD practice. This makes it more than a descriptive biomarker in this specific clinical niche.',
+        metrics: [['Management changes','35 patients'],['Cohort proportion','32%']],
+        evidence:[
+          {title:'Chest 2024 clinical impact study', src:'PMID 38950694', text:'The study found that telomere-length testing changed management in 35 patients, which was 32% of the cohort. Reduction or avoidance of immunosuppression was the most frequent change.', href:'https://pubmed.ncbi.nlm.nih.gov/38950694/'}
+        ]
+      }
+    };
+
+    const tabs = document.querySelectorAll('.tab');
+    const groups = document.querySelectorAll('[data-group]');
+    const nodes = document.querySelectorAll('.node[data-key]');
+    const titleEl = document.getElementById('detail-title');
+    const tagsEl = document.getElementById('detail-tags');
+    const bodyEl = document.getElementById('detail-body');
+    const seqEl = document.getElementById('detail-seq');
+    const metricsEl = document.getElementById('metrics');
+    const evidenceEl = document.getElementById('evidence');
+
+    function setView(view){
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.view === view));
+      groups.forEach(g => g.setAttribute('visibility', g.dataset.group === view ? 'visible' : 'hidden'));
+      const firstNode = document.querySelector(`[data-group="${view}"] .node[data-key]`);
+      if(firstNode) showDetail(firstNode.dataset.key, firstNode);
+    }
+
+    function showDetail(key, nodeEl){
+      const item = DATA[key];
+      if(!item) return;
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+      if(nodeEl) nodeEl.classList.add('active');
+      titleEl.textContent = item.title;
+      tagsEl.innerHTML = (item.tags || []).map(t => `<span class="badge">${t}</span>`).join(' ');
+      bodyEl.textContent = item.body;
+      if(item.seq){ seqEl.textContent = item.seq; seqEl.classList.remove('hidden'); }
+      else { seqEl.classList.add('hidden'); seqEl.textContent=''; }
+      metricsEl.innerHTML = (item.metrics || []).map(m => `<div class="metric"><div class="small">${m[0]}</div><div class="n" style="font-size:16px">${m[1]}</div></div>`).join('');
+      evidenceEl.innerHTML = (item.evidence || []).map(e => `
+        <div class="evi">
+          <div class="title">${e.title}</div>
+          <div class="src">${e.src}</div>
+          <div>${e.text}</div>
+          <div style="margin-top:8px"><a href="${e.href}" target="_blank" rel="noopener">Open source</a></div>
+        </div>
+      `).join('');
+    }
+
+    tabs.forEach(t => t.addEventListener('click', () => setView(t.dataset.view)));
+    nodes.forEach(n => n.addEventListener('click', () => showDetail(n.dataset.key, n)));
+
+    document.getElementById('copyPath').addEventListener('click', async () => {
+      const text = 'index.html';
+      try { await navigator.clipboard.writeText(text); alert('Copied: index.html'); } catch { alert(text); }
+    });
+    document.getElementById('copyDeploy').addEventListener('click', async () => {
+      const text = 'Deploy note:\n1) Upload the HTML file as index.html to Netlify, Vercel, or GitHub Pages.\n2) Publish as a static site.\n3) Share the generated public URL.';
+      try { await navigator.clipboard.writeText(text); alert('Deploy note copied.'); } catch { alert(text); }
+    });
+
+    setView('molecular');
+  </script>
+</body>
+</html>
